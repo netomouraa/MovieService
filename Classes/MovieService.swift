@@ -12,7 +12,7 @@ import UIKit
 public protocol MovieServiceProtocol {
     func getMovies(completion: @escaping (Result<MovieListModel, Error>) -> Void)
     func searchMovies(query: String, completion: @escaping (Result<MovieListModel, Error>?) -> Void)
-//    func loadImage(for movie: MovieListItem, completion: @escaping (UIImage?) -> Void)
+    func loadImage(for movie: MovieListItem, completion: @escaping (UIImage?) -> Void)
 }
 
 public class MovieService: MovieServiceProtocol {
@@ -40,7 +40,6 @@ public class MovieService: MovieServiceProtocol {
                 do {
                     let movies = try JSONDecoder().decode(MovieListModel.self, from: data)
                     DispatchQueue.main.async {
-                        //                        self.movieListModel = movies
                         completion(.success(movies))
                     }
                 } catch {
@@ -75,5 +74,20 @@ public class MovieService: MovieServiceProtocol {
         }
     }
     
+    public func loadImage(for movie: MovieListItem, completion: @escaping (UIImage?) -> Void) {
+        guard let path = movie.posterPath,
+              let url = URL(string: "https://image.tmdb.org/t/p/w500/\(path)") else {
+            completion(nil)
+            return
+        }
+
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let data = data, let image = UIImage(data: data) {
+                completion(image)
+            } else {
+                completion(nil)
+            }
+        }.resume()
+    }
 }
 
