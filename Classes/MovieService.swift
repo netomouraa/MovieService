@@ -40,46 +40,21 @@ public class MovieService: MovieServiceProtocol {
     
     public func searchMovies(query: String) -> AnyPublisher<MovieListModel, Error> {
         guard !query.isEmpty else {
-            // Se a consulta estiver vazia, retornar um erro apropriado
             return Fail(error: MovieServiceError.emptyQuery).eraseToAnyPublisher()
         }
 
         let urlString = "\(baseURL)\(searchURL)\(APIKeys.apiKey)&query=\(query)"
+        
         guard let url = URL(string: urlString) else {
-            // Se a URL for inválida, retornar um erro
-            return Fail(error: MovieServiceError.invalidURL).eraseToAnyPublisher()
+            let error = MovieServiceError.invalidURL
+            return Fail(error: error).eraseToAnyPublisher()
         }
-
+        
         return URLSession.shared.dataTaskPublisher(for: url)
             .map(\.data)
             .decode(type: MovieListModel.self, decoder: JSONDecoder())
             .eraseToAnyPublisher()
     }
-    
-//    public func searchMovies(query: String, completion: @escaping (Result<MovieListModel, Error>?) -> Void) {
-//        guard !query.isEmpty else {
-//            return
-//        }
-//        
-//        let urlString = "\(baseURL)\(searchURL)\(APIKeys.apiKey)&query=\(query)"
-//        
-//        if let url = URL(string: urlString) {
-//            URLSession.shared.dataTask(with: url) { data, _, error in
-//                if let data = data {
-//                    do {
-//                        let result = try JSONDecoder().decode(MovieListModel.self, from: data)
-//                        DispatchQueue.main.async {
-//                            completion(.success(result))
-//                        }
-//                    } catch {
-//                        print("Erro ao decodificar JSON: \(error)")
-//                    }
-//                } else if let error = error {
-//                    print("Erro na requisição: \(error)")
-//                }
-//            }.resume()
-//        }
-//    }
     
     public func loadImage(for movie: MovieListItem) -> AnyPublisher<UIImage?, Error> {
         guard let path = movie.posterPath,
@@ -89,14 +64,12 @@ public class MovieService: MovieServiceProtocol {
                 .eraseToAnyPublisher()
         }
 
-        // Tenta carregar a imagem do cache
         if let data = URLCache.shared.cachedResponse(for: URLRequest(url: url))?.data,
            let image = UIImage(data: data) {
             return Just(image)
                 .setFailureType(to: Error.self)
                 .eraseToAnyPublisher()
         } else {
-            // Se a imagem não estiver em cache, faz o download
             return URLSession.shared.dataTaskPublisher(for: url)
                 .map(\.data)
                 .tryMap { data throws -> UIImage in
@@ -104,7 +77,6 @@ public class MovieService: MovieServiceProtocol {
                         throw MovieServiceError.invalidImageData
                     }
 
-                    // Armazena a imagem em cache
                     let response = URLResponse(url: url, mimeType: "image/jpeg", expectedContentLength: data.count, textEncodingName: nil)
                     let cachedResponse = CachedURLResponse(response: response, data: data)
                     URLCache.shared.storeCachedResponse(cachedResponse, for: URLRequest(url: url))
@@ -119,3 +91,14 @@ public class MovieService: MovieServiceProtocol {
     
 }
 
+
+enum MovieServiceError: Error {
+    case invalidImageData
+    case imageLoadingFailed
+    case emptyQuery
+    case invalidURL
+}
+
+enum APIKeys {
+    static let apiKey = "e0704089dab5a4884ecf67ab2aef73dd"
+}
