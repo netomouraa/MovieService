@@ -8,21 +8,6 @@
 
 import Foundation
 
-//struct MovieListModel: Codable {
-//    let page: Int
-//    let results: [MovieListItem]
-//    let totalPages: Int
-//    let totalResults: Int
-//    
-//    enum CodingKeys: String, CodingKey {
-//        case page
-//        case results
-//        case totalPages = "total_pages"
-//        case totalResults = "total_results"
-//    }
-//}
-
-
 public struct MovieListModel: Codable {
     public let page: Int
     public let results: [MovieListItem]
